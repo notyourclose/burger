@@ -1,0 +1,1102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cheese Crave</title>
+<script src="https://cdn.tailwindcss.com/3.4.16"></script>
+<script>tailwind.config={theme:{extend:{colors:{primary:'#FF6B35',secondary:'#2EC4B6'},borderRadius:{'none':'0px','sm':'4px',DEFAULT:'8px','md':'12px','lg':'16px','xl':'20px','2xl':'24px','3xl':'32px','full':'9999px','button':'8px'}}}}</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Pacifico&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/remixicon/4.6.0/remixicon.min.css">
+<script src="/socket.io/socket.io.js"></script>
+<style>
+:where([class^="ri-"])::before { content: "\f3c2"; }
+body {
+font-family: 'Poppins', sans-serif;
+scroll-behavior: smooth;
+overflow-x: hidden;
+}
+.day-night-transition {
+background: linear-gradient(180deg, #f0f9ff 0%, #ffedd5 100%);
+transition: background 0.5s ease;
+}
+.food-card {
+transform-style: preserve-3d;
+transition: transform 0.6s ease-out;
+}
+.food-card:hover {
+transform: translateY(-10px) rotateY(10deg);
+}
+.food-image {
+transition: transform 0.6s ease;
+}
+.food-card:hover .food-image {
+transform: rotate(15deg) scale(1.05);
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+-webkit-appearance: none;
+margin: 0;
+}
+.hero-section {
+background-position: center;
+background-repeat: no-repeat;
+background-size: cover;
+position: relative;
+}
+.hero-overlay {
+background: linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0) 100%);
+}
+.scroll-indicator {
+animation: bounce 2s infinite;
+}
+@keyframes bounce {
+0%, 20%, 50%, 80%, 100% {
+transform: translateY(0);
+}
+40% {
+transform: translateY(-20px);
+}
+60% {
+transform: translateY(-10px);
+}
+}
+</style>
+</head>
+<body>
+<!-- Header -->
+<header class="fixed top-0 left-0 right-0 z-50 bg-white bg-opacity-95 shadow-md transition-all duration-300">
+<div class="container mx-auto px-6 py-4 flex items-center justify-between">
+<a href="#" class="text-3xl font-['Pacifico'] text-primary">Cheese Crave</a>
+<nav class="hidden md:flex items-center space-x-8">
+<a href="#home" class="text-gray-800 hover:text-primary font-medium transition-colors">Home</a>
+<a href="#menu" class="text-gray-800 hover:text-primary font-medium transition-colors">Menu</a>
+<a href="#about" class="text-gray-800 hover:text-primary font-medium transition-colors">About</a>
+<a href="#contact" class="text-gray-800 hover:text-primary font-medium transition-colors">Contact</a>
+</nav>
+<div class="flex items-center space-x-4">
+<div class="relative w-10 h-10 flex items-center justify-center cursor-pointer" id="searchToggle">
+<i class="ri-search-line ri-xl text-gray-700"></i>
+<div id="searchOverlay" class="absolute top-full right-0 mt-2 w-[400px] bg-white shadow-xl rounded-lg hidden">
+<div class="p-4">
+<div class="flex justify-between items-center mb-4">
+<h3 class="font-semibold text-gray-800">Search Menu</h3>
+<button id="closeSearch" class="text-gray-400 hover:text-gray-600">
+<i class="ri-close-line ri-lg"></i>
+</button>
+</div>
+<form id="searchForm" class="relative mb-4">
+<input type="text" id="searchInput" placeholder="Search our menu..." class="w-full pl-10 pr-4 py-2 border border-gray-200 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent text-sm">
+<div class="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 flex items-center justify-center">
+<i class="ri-search-line text-gray-400"></i>
+</div>
+</form>
+<div id="searchResults" class="max-h-[400px] overflow-y-auto hidden">
+<div class="space-y-4"></div>
+</div>
+<div id="noResults" class="text-center py-4 text-gray-500 hidden">
+No menu items found matching your search.
+</div>
+</div>
+</div>
+</div>
+<div id="userMenuToggle" class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
+<i class="ri-user-line ri-xl text-gray-700"></i>
+<div id="userDropdown" class="absolute top-full right-0 mt-2 w-48 bg-white shadow-xl rounded-lg hidden">
+<div class="py-2">
+<a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+<i class="ri-login-box-line mr-2"></i>
+<span>Sign In</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+<i class="ri-user-add-line mr-2"></i>
+<span>Create Account</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+<i class="ri-user-settings-line mr-2"></i>
+<span>My Profile</span>
+</a>
+<a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+<i class="ri-history-line mr-2"></i>
+<span>Order History</span>
+</a>
+<div class="border-t border-gray-100 my-1"></div>
+<a href="#" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors">
+<i class="ri-logout-box-line mr-2"></i>
+<span>Sign Out</span>
+</a>
+</div>
+</div>
+</div>
+<div class="relative w-10 h-10 flex items-center justify-center cursor-pointer">
+<i class="ri-shopping-cart-2-line ri-xl text-gray-700"></i>
+<span class="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center text-white text-xs font-bold">3</span>
+</div>
+<button class="md:hidden w-10 h-10 flex items-center justify-center">
+<i class="ri-menu-line ri-xl text-gray-700"></i>
+</button>
+</div>
+</div>
+</header>
+<!-- Hero Section -->
+<section id="home" class="hero-section min-h-screen flex items-center pt-20" style="background-image: url('https://readdy.ai/api/search-image?query=A%20modern%20restaurant%20setting%20with%20ambient%20lighting%2C%20featuring%20a%20gourmet%20burger%20on%20the%20left%20side%20that%20is%20perfectly%20lit.%20The%20right%20side%20transitions%20to%20a%20darker%20evening%20atmosphere%20with%20subtle%20lighting.%20The%20image%20has%20a%20professional%20food%20photography%20quality%20with%20shallow%20depth%20of%20field%2C%20high-end%20styling%2C%20and%20natural-looking%20lighting%20that%20creates%20a%20day-to-night%20transition%20effect.&width=1920&height=1080&seq=1&orientation=landscape')">
+<div class="hero-overlay absolute inset-0"></div>
+<div class="container mx-auto px-6 relative z-10">
+<div class="w-full md:w-1/2 text-white">
+<h1 class="text-5xl md:text-6xl font-bold mb-4 leading-tight">Savor the Flavor Revolution</h1>
+<p class="text-xl mb-8 text-gray-100">Experience our gourmet creations with dynamic flavors that transform your dining experience from day to night.</p>
+<div class="flex flex-col sm:flex-row gap-4">
+<a href="order-details.html" class="inline-flex">
+<button class="bg-primary hover:bg-opacity-90 text-white px-8 py-3 rounded-button font-semibold transition-all whitespace-nowrap flex items-center">
+<i class="ri-restaurant-line mr-2"></i> Order Now
+</button>
+</a>
+<button class="bg-white hover:bg-gray-100 text-gray-900 px-8 py-3 rounded-button font-semibold transition-all whitespace-nowrap flex items-center">
+<i class="ri-book-open-line mr-2"></i> View Menu
+</button>
+</div>
+</div>
+</div>
+<div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 text-white scroll-indicator">
+<div class="flex flex-col items-center">
+<span class="text-sm mb-2">Scroll to explore</span>
+<i class="ri-arrow-down-line ri-xl"></i>
+</div>
+</div>
+</section>
+<!-- Menu Categories Section -->
+<section id="menu" class="py-20 day-night-transition">
+<div class="container mx-auto px-6">
+<div class="text-center mb-16">
+<h2 class="text-4xl font-bold mb-4">Our Signature Categories</h2>
+<p class="text-gray-600 max-w-2xl mx-auto">Explore our carefully crafted menu featuring premium ingredients and innovative cooking techniques that bring out extraordinary flavors.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+<!-- Burgers Category -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-64 overflow-hidden relative">
+<img src="https://readdy.ai/api/search-image?query=A%20gourmet%20burger%20with%20a%20thick%20juicy%20patty%2C%20melted%20cheese%2C%20fresh%20lettuce%2C%20tomato%2C%20and%20a%20brioche%20bun%2C%20photographed%20from%20a%2045-degree%20angle%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20and%20a%20shallow%20depth%20of%20field%20that%20focuses%20on%20the%20burgers%20textures.&width=600&height=600&seq=2&orientation=squarish" alt="Gourmet Burgers" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<h3 class="text-2xl font-bold mb-2">Gourmet Burgers</h3>
+<p class="text-gray-600 mb-4">Handcrafted patties with premium toppings and our signature sauces.</p>
+<a href="Food-Category-Detail-Page.html" class="inline-flex">
+<button class="bg-primary hover:bg-opacity-90 text-white px-6 py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center">
+<span>Explore More</span>
+<i class="ri-arrow-right-line ml-2"></i>
+</button>
+</a>
+</div>
+</div>
+<!-- Pizzas Category -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-64 overflow-hidden relative">
+<img src="https://readdy.ai/api/search-image?query=A%20wood-fired%20artisanal%20pizza%20with%20a%20thin%20crispy%20crust%2C%20topped%20with%20fresh%20mozzarella%2C%20basil%20leaves%2C%20and%20cherry%20tomatoes%2C%20photographed%20from%20above%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20and%20steam%20rising%20from%20the%20hot%20pizza%2C%20giving%20it%20an%20authentic%20Italian%20appearance.&width=600&height=600&seq=3&orientation=squarish" alt="Artisanal Pizzas" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<h3 class="text-2xl font-bold mb-2">Artisanal Pizzas</h3>
+<p class="text-gray-600 mb-4">Wood-fired crusts topped with fresh, locally-sourced ingredients.</p>
+<a href="Food-Category-Detail-Page.html" class="inline-flex">
+<button class="bg-primary hover:bg-opacity-90 text-white px-6 py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center">
+<span>Explore More</span>
+<i class="ri-arrow-right-line ml-2"></i>
+</button>
+</a>
+</div>
+</div>
+<!-- Hot Dogs Category -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-64 overflow-hidden relative">
+<img src="https://readdy.ai/api/search-image?query=A%20gourmet%20hot%20dog%20with%20a%20premium%20sausage%20in%20a%20fresh%20bun%2C%20topped%20with%20gourmet%20condiments%20like%20caramelized%20onions%2C%20artisanal%20mustard%2C%20and%20microgreens%2C%20photographed%20from%20a%2045-degree%20angle%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20and%20a%20shallow%20depth%20of%20field%20that%20focuses%20on%20the%20hot%20dogs%20textures%20and%20toppings.&width=600&height=600&seq=4&orientation=squarish" alt="Gourmet Hot Dogs" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<h3 class="text-2xl font-bold mb-2">Gourmet Hot Dogs</h3>
+<p class="text-gray-600 mb-4">Premium sausages with creative toppings and homemade condiments.</p>
+<a href="Food-Category-Detail-Page.html" class="inline-flex">
+<button class="bg-primary hover:bg-opacity-90 text-white px-6 py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center">
+<span>Explore More</span>
+<i class="ri-arrow-right-line ml-2"></i>
+</button>
+</a>
+</div>
+</div>
+<!-- Noodles Category -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-64 overflow-hidden relative">
+<img src="https://readdy.ai/api/search-image?query=A%20steaming%20bowl%20of%20artisanal%20ramen%20noodles%20with%20rich%20broth%2C%20sliced%20pork%2C%20soft-boiled%20egg%2C%20green%20onions%2C%20and%20nori%2C%20photographed%20from%20a%2045-degree%20angle%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20visible%20steam%20rising%20from%20the%20hot%20soup%2C%20and%20a%20shallow%20depth%20of%20field%20that%20focuses%20on%20the%20noodles%20and%20toppings.&width=600&height=600&seq=5&orientation=squarish" alt="Artisanal Noodles" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<h3 class="text-2xl font-bold mb-2">Artisanal Noodles</h3>
+<p class="text-gray-600 mb-4">Handmade noodles in flavorful broths with premium toppings.</p>
+<a href="Food-Category-Detail-Page.html" class="inline-flex">
+<button class="bg-primary hover:bg-opacity-90 text-white px-6 py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center">
+<span>Explore More</span>
+<i class="ri-arrow-right-line ml-2"></i>
+</button>
+</a>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Featured Items Section -->
+<section class="py-20 bg-gradient-to-b from-white to-gray-50">
+<div class="container mx-auto px-6">
+<div class="text-center mb-16">
+<h2 class="text-4xl font-bold mb-4">Featured Specialties</h2>
+<p class="text-gray-600 max-w-2xl mx-auto">Our chef's selections that have captivated our customers with unique flavors and presentations.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Featured Item 1 -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-72 overflow-hidden relative">
+<div class="absolute top-4 left-4 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium z-10">Bestseller</div>
+<img src="https://readdy.ai/api/search-image?query=A%20signature%20double%20cheeseburger%20with%20wagyu%20beef%20patties%2C%20truffle%20aioli%2C%20caramelized%20onions%2C%20and%20aged%20cheddar%20on%20a%20brioche%20bun%2C%20photographed%20from%20a%2045-degree%20angle%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20and%20a%20shallow%20depth%20of%20field%20that%20highlights%20the%20burgers%20gourmet%20quality.&width=600&height=700&seq=6&orientation=portrait" alt="Truffle Wagyu Burger" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<div class="flex justify-between items-center mb-2">
+<h3 class="text-xl font-bold">Truffle Wagyu Burger</h3>
+<span class="text-primary font-bold">$18.95</span>
+</div>
+<p class="text-gray-600 mb-4">Wagyu beef patty, black truffle aioli, aged cheddar, caramelized onions, and arugula on a toasted brioche bun.</p>
+<div class="flex items-center mb-4">
+<div class="flex text-yellow-400">
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-half-fill"></i>
+</div>
+<span class="text-gray-500 text-sm ml-2">(128 reviews)</span>
+</div>
+<button class="w-full bg-primary hover:bg-opacity-90 text-white py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center justify-center">
+<i class="ri-shopping-cart-2-line mr-2"></i> Add to Cart
+</button>
+</div>
+</div>
+<!-- Featured Item 2 -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-72 overflow-hidden relative">
+<div class="absolute top-4 left-4 bg-secondary text-white px-3 py-1 rounded-full text-sm font-medium z-10">New</div>
+<img src="https://readdy.ai/api/search-image?query=A%20gourmet%20wood-fired%20pizza%20with%20fig%2C%20prosciutto%2C%20goat%20cheese%2C%20and%20arugula%2C%20drizzled%20with%20balsamic%20glaze%2C%20photographed%20from%20above%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20and%20a%20shallow%20depth%20of%20field%20that%20highlights%20the%20pizzas%20artisanal%20quality%20and%20premium%20ingredients.&width=600&height=700&seq=7&orientation=portrait" alt="Fig & Prosciutto Pizza" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<div class="flex justify-between items-center mb-2">
+<h3 class="text-xl font-bold">Fig & Prosciutto Pizza</h3>
+<span class="text-primary font-bold">$22.50</span>
+</div>
+<p class="text-gray-600 mb-4">Wood-fired crust topped with fig jam, prosciutto, goat cheese, arugula, and a balsamic glaze drizzle.</p>
+<div class="flex items-center mb-4">
+<div class="flex text-yellow-400">
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+</div>
+<span class="text-gray-500 text-sm ml-2">(86 reviews)</span>
+</div>
+<button class="w-full bg-primary hover:bg-opacity-90 text-white py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center justify-center">
+<i class="ri-shopping-cart-2-line mr-2"></i> Add to Cart
+</button>
+</div>
+</div>
+<!-- Featured Item 3 -->
+<div class="food-card bg-white rounded-lg shadow-lg overflow-hidden">
+<div class="h-72 overflow-hidden relative">
+<div class="absolute top-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-sm font-medium z-10">Spicy</div>
+<img src="https://readdy.ai/api/search-image?query=A%20gourmet%20ramen%20bowl%20with%20rich%20tonkotsu%20broth%2C%20fresh%20noodles%2C%20chashu%20pork%2C%20soft-boiled%20egg%2C%20green%20onions%2C%20and%20nori%2C%20photographed%20from%20a%2045-degree%20angle%20with%20professional%20lighting%20against%20a%20simple%20light%20background.%20The%20image%20has%20high-end%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20visible%20steam%20rising%20from%20the%20hot%20soup%2C%20and%20a%20shallow%20depth%20of%20field%20that%20highlights%20the%20ramens%20authentic%20Japanese%20quality.&width=600&height=700&seq=8&orientation=portrait" alt="Spicy Tonkotsu Ramen" class="food-image w-full h-full object-cover object-top">
+</div>
+<div class="p-6">
+<div class="flex justify-between items-center mb-2">
+<h3 class="text-xl font-bold">Spicy Tonkotsu Ramen</h3>
+<span class="text-primary font-bold">$16.75</span>
+</div>
+<p class="text-gray-600 mb-4">Rich pork bone broth, handmade noodles, chashu pork, ajitama egg, spicy miso paste, and fresh garnishes.</p>
+<div class="flex items-center mb-4">
+<div class="flex text-yellow-400">
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-line"></i>
+</div>
+<span class="text-gray-500 text-sm ml-2">(104 reviews)</span>
+</div>
+<button class="w-full bg-primary hover:bg-opacity-90 text-white py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center justify-center">
+<i class="ri-shopping-cart-2-line mr-2"></i> Add to Cart
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Special Offer Section -->
+<section class="py-20 bg-gradient-to-r from-primary/10 to-secondary/10">
+<div class="container mx-auto px-6">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="w-full md:w-1/2">
+<img src="https://readdy.ai/api/search-image?query=A%20visually%20stunning%20food%20platter%20with%20a%20selection%20of%20gourmet%20burgers%2C%20wood-fired%20pizzas%2C%20artisanal%20hot%20dogs%2C%20and%20ramen%20bowls%20arranged%20beautifully%20on%20a%20rustic%20wooden%20table%20with%20ambient%20lighting.%20The%20image%20has%20professional%20food%20photography%20styling%20with%20natural%20colors%2C%20crisp%20details%2C%20and%20a%20shallow%20depth%20of%20field%20that%20highlights%20the%20variety%20and%20quality%20of%20the%20dishes.%20The%20composition%20suggests%20a%20feast%20or%20special%20offer%20with%20multiple%20premium%20dishes.&width=800&height=600&seq=9&orientation=landscape" alt="Special Combo Offer" class="w-full h-auto rounded-lg shadow-xl">
+</div>
+<div class="w-full md:w-1/2">
+<div class="bg-white p-8 rounded-lg shadow-lg">
+<span class="inline-block bg-red-100 text-red-800 px-4 py-1 rounded-full text-sm font-semibold mb-4">Limited Time Offer</span>
+<h2 class="text-3xl font-bold mb-4">Weekend Family Feast</h2>
+<p class="text-gray-600 mb-6">Enjoy our exclusive weekend special featuring a curated selection of our most popular items at a special price.</p>
+<div class="space-y-4 mb-6">
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center mt-1">
+<i class="ri-check-line text-primary ri-lg"></i>
+</div>
+<div class="ml-3">
+<h4 class="font-medium">Choice of 2 Signature Burgers</h4>
+<p class="text-sm text-gray-500">Any burgers from our premium selection</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center mt-1">
+<i class="ri-check-line text-primary ri-lg"></i>
+</div>
+<div class="ml-3">
+<h4 class="font-medium">1 Large Artisanal Pizza</h4>
+<p class="text-sm text-gray-500">Choose from any of our wood-fired specialties</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center mt-1">
+<i class="ri-check-line text-primary ri-lg"></i>
+</div>
+<div class="ml-3">
+<h4 class="font-medium">2 Gourmet Hot Dogs</h4>
+<p class="text-sm text-gray-500">With your choice of premium toppings</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-6 h-6 flex items-center justify-center mt-1">
+<i class="ri-check-line text-primary ri-lg"></i>
+</div>
+<div class="ml-3">
+<h4 class="font-medium">Family-Size Fries & 4 Drinks</h4>
+<p class="text-sm text-gray-500">Includes our signature seasoned fries</p>
+</div>
+</div>
+</div>
+<div class="flex items-center justify-between mb-6">
+<div>
+<span class="text-gray-500 line-through text-lg">$89.95</span>
+<span class="text-3xl font-bold text-primary ml-2">$69.95</span>
+</div>
+<span class="bg-green-100 text-green-800 px-3 py-1 rounded text-sm font-medium">Save $20</span>
+</div>
+<button id="orderFeastBtn" class="w-full bg-primary hover:bg-opacity-90 text-white py-3 rounded-button font-semibold transition-all whitespace-nowrap flex items-center justify-center">
+<i class="ri-shopping-cart-2-line mr-2"></i> Order Family Feast
+</button>
+<p class="text-sm text-gray-500 mt-4 text-center">Available Friday to Sunday. Limited availability each day.</p>
+</div>
+</div>
+</div>
+</div>
+<!-- Family Feast Order Modal -->
+<div id="feastModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+<div class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full max-w-2xl bg-white rounded-lg shadow-xl">
+<div class="p-4">
+<div class="flex justify-between items-center mb-4">
+<h3 class="text-xl font-bold">Customize Your Family Feast</h3>
+<button id="closeModal" class="text-gray-400 hover:text-gray-600">
+<i class="ri-close-line ri-xl"></i>
+</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Burgers Selection -->
+<div class="space-y-3">
+<h4 class="font-semibold text-base">Select 2 Signature Burgers</h4>
+<div class="space-y-2">
+<label class="flex items-center space-x-2">
+<input type="checkbox" name="burger" value="truffle" class="w-4 h-4 text-primary">
+<span class="text-sm">Truffle Wagyu Burger</span>
+</label>
+<label class="flex items-center space-x-2">
+<input type="checkbox" name="burger" value="classic" class="w-4 h-4 text-primary">
+<span class="text-sm">Classic Cheeseburger</span>
+</label>
+<label class="flex items-center space-x-2">
+<input type="checkbox" name="burger" value="bbq" class="w-4 h-4 text-primary">
+<span class="text-sm">BBQ Bacon Burger</span>
+</label>
+</div>
+</div>
+<!-- Pizza Selection -->
+<div class="space-y-3">
+<h4 class="font-semibold text-base">Choose Your Pizza</h4>
+<select id="pizzaSelect" class="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary">
+<option value="">Select a pizza</option>
+<option value="margherita">Margherita</option>
+<option value="pepperoni">Pepperoni Supreme</option>
+<option value="veggie">Vegetarian Delight</option>
+<option value="fig">Fig & Prosciutto</option>
+</select>
+</div>
+<!-- Hot Dogs Selection -->
+<div class="space-y-3">
+<h4 class="font-semibold text-base">Select 2 Gourmet Hot Dogs</h4>
+<div class="space-y-2">
+<label class="flex items-center space-x-2">
+<input type="checkbox" name="hotdog" value="classic" class="w-4 h-4 text-primary">
+<span class="text-sm">Classic New York Dog</span>
+</label>
+<label class="flex items-center space-x-2">
+<input type="checkbox" name="hotdog" value="chili" class="w-4 h-4 text-primary">
+<span class="text-sm">Chili Cheese Dog</span>
+</label>
+<label class="flex items-center space-x-2">
+<input type="checkbox" name="hotdog" value="gourmet" class="w-4 h-4 text-primary">
+<span class="text-sm">Gourmet Truffle Dog</span>
+</label>
+</div>
+</div>
+<!-- Drinks Selection -->
+<div class="space-y-3">
+<h4 class="font-semibold text-base">Select 4 Drinks</h4>
+<div class="grid grid-cols-2 gap-2">
+<div class="flex items-center justify-between border rounded p-2">
+<span class="text-sm">Cola</span>
+<div class="flex items-center space-x-1">
+<button class="drink-minus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">-</button>
+<span class="drink-count w-6 text-center text-sm">0</span>
+<button class="drink-plus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">+</button>
+</div>
+</div>
+<div class="flex items-center justify-between border rounded p-2">
+<span class="text-sm">Sprite</span>
+<div class="flex items-center space-x-1">
+<button class="drink-minus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">-</button>
+<span class="drink-count w-6 text-center text-sm">0</span>
+<button class="drink-plus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">+</button>
+</div>
+</div>
+<div class="flex items-center justify-between border rounded p-2">
+<span class="text-sm">Iced Tea</span>
+<div class="flex items-center space-x-1">
+<button class="drink-minus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">-</button>
+<span class="drink-count w-6 text-center text-sm">0</span>
+<button class="drink-plus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">+</button>
+</div>
+</div>
+<div class="flex items-center justify-between border rounded p-2">
+<span class="text-sm">Lemonade</span>
+<div class="flex items-center space-x-1">
+<button class="drink-minus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">-</button>
+<span class="drink-count w-6 text-center text-sm">0</span>
+<button class="drink-plus w-5 h-5 flex items-center justify-center bg-gray-100 rounded text-sm">+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Delivery Options -->
+<div class="mt-4 p-3 bg-gray-50 rounded">
+<h4 class="font-semibold text-base mb-2">Delivery Options</h4>
+<div class="flex space-x-4">
+<label class="flex items-center space-x-2">
+<input type="radio" name="delivery" value="delivery" checked class="text-primary">
+<span class="text-sm">Delivery</span>
+</label>
+<label class="flex items-center space-x-2">
+<input type="radio" name="delivery" value="pickup" class="text-primary">
+<span class="text-sm">Pickup</span>
+</label>
+</div>
+</div>
+<!-- Special Instructions -->
+<div class="mt-4">
+<h4 class="font-semibold text-base mb-2">Special Instructions</h4>
+<textarea id="specialInstructions" class="w-full p-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary" rows="2" placeholder="Any special requests or allergies?"></textarea>
+</div>
+<!-- Order Summary -->
+<div class="mt-4 p-3 bg-gray-50 rounded">
+<h4 class="font-semibold text-base mb-2">Order Summary</h4>
+<div class="flex justify-between text-base font-semibold">
+<span>Total</span>
+<span class="text-primary">$69.95</span>
+</div>
+</div>
+<!-- Action Buttons -->
+<div class="mt-4 flex space-x-3">
+<button id="addToCartBtn" class="flex-1 bg-primary hover:bg-opacity-90 text-white py-2 rounded-button font-medium transition-all whitespace-nowrap flex items-center justify-center text-sm">
+<i class="ri-shopping-cart-2-line mr-2"></i> Add to Cart
+</button>
+<button id="cancelOrderBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 rounded-button font-medium transition-all whitespace-nowrap text-sm">
+Cancel
+</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Testimonials Section -->
+<section class="py-20 bg-white">
+<div class="container mx-auto px-6">
+<div class="text-center mb-16">
+<h2 class="text-4xl font-bold mb-4">What Our Customers Say</h2>
+<p class="text-gray-600 max-w-2xl mx-auto">Hear from our satisfied customers about their dining experiences with us.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+<!-- Testimonial 1 -->
+<div class="bg-gray-50 rounded-lg p-8 shadow-sm">
+<div class="flex text-yellow-400 mb-4">
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+</div>
+<p class="text-gray-700 mb-6">"The Truffle Wagyu Burger is absolutely mind-blowing! The combination of flavors is perfect, and the quality of ingredients is exceptional. This has become my go-to spot for gourmet comfort food."</p>
+<div class="flex items-center">
+<div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-4">
+<i class="ri-user-fill ri-lg text-gray-500"></i>
+</div>
+<div>
+<h4 class="font-medium">Michael Thompson</h4>
+<p class="text-sm text-gray-500">Food Enthusiast</p>
+</div>
+</div>
+</div>
+<!-- Testimonial 2 -->
+<div class="bg-gray-50 rounded-lg p-8 shadow-sm">
+<div class="flex text-yellow-400 mb-4">
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-half-fill"></i>
+</div>
+<p class="text-gray-700 mb-6">"Their artisanal pizzas are the closest thing to authentic Italian pizza I've had outside of Naples. The Fig & Prosciutto pizza is a perfect balance of sweet and savory. The atmosphere is also fantastic!"</p>
+<div class="flex items-center">
+<div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-4">
+<i class="ri-user-fill ri-lg text-gray-500"></i>
+</div>
+<div>
+<h4 class="font-medium">Sophia Rodriguez</h4>
+<p class="text-sm text-gray-500">Food Blogger</p>
+</div>
+</div>
+</div>
+<!-- Testimonial 3 -->
+<div class="bg-gray-50 rounded-lg p-8 shadow-sm">
+<div class="flex text-yellow-400 mb-4">
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+<i class="ri-star-fill"></i>
+</div>
+<p class="text-gray-700 mb-6">"The Spicy Tonkotsu Ramen is absolutely incredible! The broth is rich and flavorful, and the noodles are perfectly cooked. I've tried ramen all over the city, and this place tops them all. Worth every penny!"</p>
+<div class="flex items-center">
+<div class="w-12 h-12 bg-gray-300 rounded-full flex items-center justify-center mr-4">
+<i class="ri-user-fill ri-lg text-gray-500"></i>
+</div>
+<div>
+<h4 class="font-medium">David Chen</h4>
+<p class="text-sm text-gray-500">Regular Customer</p>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Mobile App Section -->
+<section class="py-20 bg-gradient-to-r from-primary/5 to-secondary/5">
+<div class="container mx-auto px-6">
+<div class="flex flex-col md:flex-row items-center gap-12">
+<div class="w-full md:w-1/2">
+<h2 class="text-4xl font-bold mb-4">Download Our Mobile App</h2>
+<p class="text-gray-600 mb-6">Get exclusive deals, easy ordering, and track your delivery in real-time with our mobile app.</p>
+<div class="space-y-4 mb-8">
+<div class="flex items-start">
+<div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full text-primary mt-1">
+<i class="ri-coupon-3-line ri-lg"></i>
+</div>
+<div class="ml-4">
+<h4 class="font-medium">Exclusive App Offers</h4>
+<p class="text-gray-600">Access special discounts and promotions only available on our app</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full text-primary mt-1">
+<i class="ri-time-line ri-lg"></i>
+</div>
+<div class="ml-4">
+<h4 class="font-medium">Fast Reordering</h4>
+<p class="text-gray-600">Quickly reorder your favorite meals with just a few taps</p>
+</div>
+</div>
+<div class="flex items-start">
+<div class="w-10 h-10 flex items-center justify-center bg-primary/10 rounded-full text-primary mt-1">
+<i class="ri-map-pin-line ri-lg"></i>
+</div>
+<div class="ml-4">
+<h4 class="font-medium">Real-Time Tracking</h4>
+<p class="text-gray-600">Follow your order from our kitchen to your doorstep</p>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-button font-medium transition-all whitespace-nowrap flex items-center justify-center">
+<i class="ri-apple-fill mr-2 ri-lg"></i>
+<div class="text-left">
+<div class="text-xs">Download on the</div>
+<div class="text-sm font-semibold">App Store</div>
+</div>
+</button>
+<button class="bg-black hover:bg-gray-900 text-white px-6 py-3 rounded-button font-medium transition-all whitespace-nowrap flex items-center justify-center">
+<i class="ri-google-play-fill mr-2 ri-lg"></i>
+<div class="text-left">
+<div class="text-xs">Get it on</div>
+<div class="text-sm font-semibold">Google Play</div>
+</div>
+</button>
+</div>
+</div>
+<div class="w-full md:w-1/2">
+<img src="https://readdy.ai/api/search-image?query=A%20smartphone%20displaying%20a%20food%20delivery%20app%20interface%20with%20gourmet%20food%20items%2C%20order%20tracking%2C%20and%20special%20offers.%20The%20phone%20is%20held%20by%20a%20hand%20against%20a%20clean%2C%20light%20background.%20The%20app%20interface%20shows%20high-quality%20images%20of%20burgers%2C%20pizzas%2C%20and%20other%20menu%20items%20with%20a%20modern%2C%20user-friendly%20design.%20The%20image%20has%20professional%20product%20photography%20styling%20with%20natural%20colors%20and%20crisp%20details.&width=700&height=800&seq=10&orientation=portrait" alt="Mobile App" class="w-full h-auto rounded-lg shadow-xl">
+</div>
+</div>
+</div>
+</section>
+<!-- Contact & Location Section -->
+<section id="contact" class="py-20 bg-white">
+<div class="container mx-auto px-6">
+    <div class="text-center mb-16">
+        <h2 class="text-4xl font-bold mb-4">Contact Us</h2>
+        <p class="text-gray-600 max-w-2xl mx-auto">Get in touch with us for any inquiries or feedback.</p>
+    </div>
+    <div class="flex flex-col lg:flex-row gap-8">
+        <div class="w-full lg:w-1/2">
+            <div class="h-96 rounded-lg overflow-hidden shadow-lg">
+                <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3960.798467128558!2d79.9697813!3d6.9147613!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zNsKwNTQnNTMuMiJOIDc5wrA1OCcxMS4yIkU!5e0!3m2!1sen!2slk!4v1635134371924!5m2!1sen!2slk" width="100%" height="100%" style="border:0;" allowfullscreen="" loading="lazy"></iframe>
+            </div>
+            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full text-primary mb-4">
+                        <i class="ri-phone-line ri-lg"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Phone</h3>
+                    <p class="text-gray-600"><a href="tel:+94781682485" class="hover:text-primary">+94 78 168 2485</a></p>
+                </div>
+                <div class="bg-gray-50 p-6 rounded-lg">
+                    <div class="w-12 h-12 flex items-center justify-center bg-primary/10 rounded-full text-primary mb-4">
+                        <i class="ri-mail-line ri-lg"></i>
+                    </div>
+                    <h3 class="text-xl font-bold mb-2">Email</h3>
+                    <p class="text-gray-600"><a href="mailto:kavishkadileepa8@gmail.com" class="hover:text-primary">kavishkadileepa8@gmail.com</a></p>
+                </div>
+            </div>
+            <div class="mt-8">
+                <h3 class="text-xl font-bold mb-4">Follow Us</h3>
+                <div class="flex space-x-4">
+                    <a href="https://www.facebook.com/share/1AFHXdp63v/?mibextid=wwXIfr" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-primary hover:text-white rounded-full transition-colors">
+                        <i class="ri-facebook-fill"></i>
+                    </a>
+                    <a href="https://www.instagram.com/kavishka_dileepa?igsh=YzFpZmtuNWJuazI5" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-primary hover:text-white rounded-full transition-colors">
+                        <i class="ri-instagram-line"></i>
+                    </a>
+                    <a href="https://x.com/vikingpubg3427?s=21" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-primary hover:text-white rounded-full transition-colors">
+                        <i class="ri-twitter-x-line"></i>
+                    </a>
+                    <a href="https://youtube.com/@1_noty0urclose?si=sxCazBIP792RWe1X" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-primary hover:text-white rounded-full transition-colors">
+                        <i class="ri-youtube-fill"></i>
+                    </a>
+                    <a href="https://www.tiktok.com/@nexode04?_t=ZS-8vpKiMivXt4&_r=1" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-100 hover:bg-primary hover:text-white rounded-full transition-colors">
+                        <i class="ri-tiktok-fill"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        <div class="w-full lg:w-1/2">
+            <div class="bg-gray-50 rounded-lg p-8">
+                <form id="contactForm" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div>
+                            <label for="name" class="block text-gray-700 mb-2">Your Name</label>
+                            <input type="text" id="name" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                        <div>
+                            <label for="email" class="block text-gray-700 mb-2">Email Address</label>
+                            <input type="email" id="email" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="subject" class="block text-gray-700 mb-2">Subject</label>
+                        <input type="text" id="subject" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+                    </div>
+                    <div>
+                        <label for="message" class="block text-gray-700 mb-2">Your Message</label>
+                        <textarea id="message" rows="5" class="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-primary hover:bg-opacity-90 text-white py-3 rounded-button font-medium transition-all">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+</section>
+<!-- Newsletter Section -->
+<section class="py-16 bg-primary/5">
+<div class="container mx-auto px-6">
+<div class="max-w-4xl mx-auto text-center">
+<h2 class="text-3xl font-bold mb-4">Join Our Foodie Community</h2>
+<p class="text-gray-600 mb-8">Subscribe to our newsletter for exclusive offers, new menu items, and foodie tips.</p>
+<form class="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
+<input type="email" placeholder="Your email address" class="flex-grow px-4 py-3 border border-gray-300 rounded-button focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent">
+<button type="submit" class="bg-primary hover:bg-opacity-90 text-white px-6 py-3 rounded-button font-semibold transition-all whitespace-nowrap">
+Subscribe
+</button>
+</form>
+<p class="text-sm text-gray-500 mt-4">We respect your privacy. Unsubscribe at any time.</p>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-gray-900 text-white pt-16 pb-8">
+<div class="container mx-auto px-6">
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-16">
+<div>
+<a href="#" class="text-3xl font-['Pacifico'] text-white mb-6 inline-block">Cheese Crave</a>
+<p class="text-gray-400 mb-6">Elevating comfort food classics with premium ingredients and innovative techniques since 2018.</p>
+<div class="flex space-x-4">
+<a href="https://www.facebook.com/share/1AFHXdp63v/?mibextid=wwXIfr" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-primary rounded-full transition-colors">
+<i class="ri-facebook-fill"></i>
+</a>
+<a href="https://www.instagram.com/kavishka_dileepa?igsh=YzFpZmtuNWJuazI5" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-primary rounded-full transition-colors">
+<i class="ri-instagram-line"></i>
+</a>
+<a href="https://x.com/vikingpubg3427?s=21" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-primary rounded-full transition-colors">
+<i class="ri-twitter-x-line"></i>
+</a>
+<a href="https://youtube.com/@1_noty0urclose?si=sxCazBIP792RWe1X" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-primary rounded-full transition-colors">
+<i class="ri-youtube-fill"></i>
+</a>
+<a href="https://www.tiktok.com/@nexode04?_t=ZS-8vpKiMivXt4&_r=1" target="_blank" class="w-10 h-10 flex items-center justify-center bg-gray-800 hover:bg-primary rounded-full transition-colors">
+<i class="ri-tiktok-fill"></i>
+</a>
+</div>
+</div>
+<div>
+<h3 class="text-lg font-bold mb-6">Quick Links</h3>
+<ul class="space-y-3">
+<li><a href="#home" class="text-gray-400 hover:text-white transition-colors">Home</a></li>
+<li><a href="#menu" class="text-gray-400 hover:text-white transition-colors">Our Menu</a></li>
+<li><a href="#" class="text-gray-400 hover:text-white transition-colors">About Us</a></li>
+<li><a href="#contact" class="text-gray-400 hover:text-white transition-colors">Contact</a></li>
+</ul>
+</div>
+<div>
+<h3 class="text-lg font-bold mb-6">Contact Info</h3>
+<ul class="space-y-3">
+<li class="flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-phone-line text-primary"></i>
+</div>
+<a href="tel:+94781682485" class="text-gray-400 hover:text-white transition-colors">+94 78 168 2485</a>
+</li>
+<li class="flex items-center">
+<div class="w-5 h-5 flex items-center justify-center mr-3">
+<i class="ri-mail-line text-primary"></i>
+</div>
+<a href="mailto:kavishkadileepa8@gmail.com" class="text-gray-400 hover:text-white transition-colors">kavishkadileepa8@gmail.com</a>
+</li>
+</ul>
+</div>
+<div>
+<h3 class="text-lg font-bold mb-6">Opening Hours</h3>
+<ul class="space-y-3 text-gray-400">
+<li class="flex justify-between">
+<span>Monday - Thursday</span>
+<span>11am - 10pm</span>
+</li>
+<li class="flex justify-between">
+<span>Friday - Saturday</span>
+<span>11am - 11pm</span>
+</li>
+<li class="flex justify-between">
+<span>Sunday</span>
+<span>12pm - 9pm</span>
+</li>
+</ul>
+<div class="mt-6">
+<h4 class="font-medium mb-2">We Accept</h4>
+<div class="flex space-x-3">
+<div class="w-10 h-6 flex items-center justify-center">
+<i class="ri-visa-fill ri-lg"></i>
+</div>
+<div class="w-10 h-6 flex items-center justify-center">
+<i class="ri-mastercard-fill ri-lg"></i>
+</div>
+<div class="w-10 h-6 flex items-center justify-center">
+<i class="ri-paypal-fill ri-lg"></i>
+</div>
+<div class="w-10 h-6 flex items-center justify-center">
+<i class="ri-apple-fill ri-lg"></i>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="pt-8 border-t border-gray-800 text-center text-gray-400 text-sm">
+<p>&copy; 2025 Cheese Crave. All rights reserved.</p>
+<div class="flex justify-center space-x-6 mt-4">
+<a href="#" class="hover:text-white transition-colors">Privacy Policy</a>
+<a href="#" class="hover:text-white transition-colors">Terms of Service</a>
+<a href="#" class="hover:text-white transition-colors">Cookie Policy</a>
+</div>
+</div>
+</div>
+</footer>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // User Menu functionality
+    const userMenuToggle = document.getElementById('userMenuToggle');
+    const userDropdown = document.getElementById('userDropdown');
+    // Toggle user dropdown
+    userMenuToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        userDropdown.classList.toggle('hidden');
+    });
+    // Close user dropdown when clicking outside
+    document.addEventListener('click', (e) => {
+        if (!userMenuToggle.contains(e.target)) {
+            userDropdown.classList.add('hidden');
+        }
+    });
+    // Search functionality
+    const searchToggle = document.getElementById('searchToggle');
+    const searchOverlay = document.getElementById('searchOverlay');
+    const closeSearch = document.getElementById('closeSearch');
+    const searchInput = document.getElementById('searchInput');
+    const searchResults = document.getElementById('searchResults');
+    const noResults = document.getElementById('noResults');
+    const resultsContainer = searchResults.querySelector('.space-y-4');
+    // Menu items data
+    const menuItems = [
+        {
+            name: "Truffle Wagyu Burger",
+            category: "Burgers",
+            price: "$18.95",
+            description: "Wagyu beef patty, black truffle aioli, aged cheddar"
+        },
+        {
+            name: "Classic Cheeseburger",
+            category: "Burgers",
+            price: "$12.95",
+            description: "Premium beef patty, cheddar cheese, lettuce, tomato"
+        },
+        {
+            name: "Fig & Prosciutto Pizza",
+            category: "Pizzas",
+            price: "$22.50",
+            description: "Fig jam, prosciutto, goat cheese, arugula"
+        },
+        {
+            name: "Margherita Pizza",
+            category: "Pizzas",
+            price: "$16.95",
+            description: "Fresh mozzarella, tomatoes, basil"
+        },
+        {
+            name: "Spicy Tonkotsu Ramen",
+            category: "Noodles",
+            price: "$16.75",
+            description: "Rich pork bone broth, chashu pork, soft-boiled egg"
+        },
+        {
+            name: "Classic New York Hot Dog",
+            category: "Hot Dogs",
+            price: "$8.95",
+            description: "Premium beef hot dog with classic toppings"
+        }
+    ];
+    // Toggle search overlay
+    searchToggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        searchOverlay.classList.toggle('hidden');
+        if (!searchOverlay.classList.contains('hidden')) {
+            searchInput.focus();
+        }
+    });
+    // Close search overlay
+    closeSearch.addEventListener('click', () => {
+        searchOverlay.classList.add('hidden');
+        searchInput.value = '';
+        clearResults();
+    });
+    // Close overlay when clicking outside
+    searchOverlay.addEventListener('click', (e) => {
+        e.stopPropagation();
+    });
+    // Search functionality
+    function clearResults() {
+        resultsContainer.innerHTML = '';
+        searchResults.classList.add('hidden');
+        noResults.classList.add('hidden');
+    }
+    function displayResults(filteredItems) {
+        clearResults();
+        if (filteredItems.length === 0) {
+            noResults.classList.remove('hidden');
+            return;
+        }
+        searchResults.classList.remove('hidden');
+        filteredItems.forEach(item => {
+            const itemElement = document.createElement('div');
+            itemElement.className = 'flex items-start p-4 hover:bg-gray-50 rounded transition-colors';
+            itemElement.innerHTML = `
+                <div class="flex-1">
+                    <div class="flex justify-between items-start mb-1">
+                        <h4 class="font-medium text-gray-900">${item.name}</h4>
+                        <span class="text-primary font-semibold">${item.price}</span>
+                    </div>
+                    <p class="text-sm text-gray-500 mb-1">${item.description}</p>
+                    <span class="text-xs text-gray-400">${item.category}</span>
+                </div>
+            `;
+            resultsContainer.appendChild(itemElement);
+        });
+    }
+    let debounceTimer;
+    searchInput.addEventListener('input', () => {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            if (searchTerm === '') {
+                clearResults();
+                return;
+            }
+            const filteredItems = menuItems.filter(item =>
+                item.name.toLowerCase().includes(searchTerm) ||
+                item.category.toLowerCase().includes(searchTerm) ||
+                item.description.toLowerCase().includes(searchTerm)
+            );
+            displayResults(filteredItems);
+        }, 300);
+    });
+    // Family Feast Modal Functionality
+    const modal = document.getElementById('feastModal');
+    const orderBtn = document.getElementById('orderFeastBtn');
+    const closeBtn = document.getElementById('closeModal');
+    const cancelBtn = document.getElementById('cancelOrderBtn');
+    const addToCartBtn = document.getElementById('addToCartBtn');
+
+    // Open modal
+    orderBtn.addEventListener('click', () => {
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    });
+
+    // Close modal functions
+    const closeModal = () => {
+        modal.classList.add('hidden');
+        document.body.style.overflow = 'auto';
+    };
+
+    closeBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Close modal when clicking outside
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Drink quantity controls
+    const drinkControls = modal.querySelectorAll('.drink-minus, .drink-plus');
+    drinkControls.forEach(button => {
+        button.addEventListener('click', (e) => {
+            const container = e.target.parentElement;
+            const countDisplay = container.querySelector('.drink-count');
+            let count = parseInt(countDisplay.textContent);
+            if (e.target.classList.contains('drink-plus') && getTotalDrinks() < 4) {
+                count++;
+            } else if (e.target.classList.contains('drink-minus') && count > 0) {
+                count--;
+            }
+            countDisplay.textContent = count;
+        });
+    });
+
+    // Get total drinks selected
+    const getTotalDrinks = () => {
+        let total = 0;
+        modal.querySelectorAll('.drink-count').forEach(display => {
+            total += parseInt(display.textContent);
+        });
+        return total;
+    };
+
+    // Burger and Hot Dog checkbox limitation
+    const limitCheckboxSelection = (checkboxes, limit) => {
+        let checked = 0;
+        checkboxes.forEach(checkbox => {
+            if (checkbox.checked) checked++;
+        });
+        checkboxes.forEach(checkbox => {
+            if (!checkbox.checked && checked >= limit) {
+                checkbox.disabled = true;
+            } else {
+                checkbox.disabled = false;
+            }
+        });
+    };
+
+    // Add event listeners for checkboxes
+    const burgerCheckboxes = modal.querySelectorAll('input[name="burger"]');
+    const hotdogCheckboxes = modal.querySelectorAll('input[name="hotdog"]');
+    burgerCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => limitCheckboxSelection(burgerCheckboxes, 2));
+    });
+    hotdogCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', () => limitCheckboxSelection(hotdogCheckboxes, 2));
+    });
+
+    // Add to Cart functionality
+    addToCartBtn.addEventListener('click', () => {
+        // Validate selections
+        const burgerSelected = Array.from(burgerCheckboxes).filter(cb => cb.checked).length === 2;
+        const pizzaSelected = document.getElementById('pizzaSelect').value !== '';
+        const hotdogSelected = Array.from(hotdogCheckboxes).filter(cb => cb.checked).length === 2;
+        const drinksSelected = getTotalDrinks() === 4;
+
+        if (!burgerSelected || !pizzaSelected || !hotdogSelected || !drinksSelected) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'bg-red-100 text-red-700 p-4 rounded mb-4';
+            errorDiv.textContent = 'Please complete all selections: 2 burgers, 1 pizza, 2 hot dogs, and 4 drinks.';
+            const firstElement = modal.querySelector('.p-4').firstChild;
+            firstElement.parentNode.insertBefore(errorDiv, firstElement);
+            setTimeout(() => {
+                errorDiv.remove();
+            }, 3000);
+            return;
+        }
+
+        // Success message and close modal
+        const successDiv = document.createElement('div');
+        successDiv.className = 'bg-green-100 text-green-700 p-4 rounded mb-4';
+        successDiv.textContent = 'Family Feast added to cart successfully!';
+        const firstElement = modal.querySelector('.p-4').firstChild;
+        firstElement.parentNode.insertBefore(successDiv, firstElement);
+        setTimeout(() => {
+            successDiv.remove();
+            closeModal();
+        }, 2000);
+    });
+});
+</script>
+</body>
+</html>
